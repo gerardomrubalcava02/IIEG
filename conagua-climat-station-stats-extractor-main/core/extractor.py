@@ -11,9 +11,12 @@
 # ==============================================================================
 
 import os
+import random
 import re
-import requests
+import time
+
 import pandas as pd
+import requests
 
 from dataclasses import dataclass, field
 from io import StringIO
@@ -64,6 +67,10 @@ class ClimateExtractor:
     """
     station: str
     url: str
+    timeout_seconds: float = 30.0
+    max_retries: int = 3
+    backoff_factor: float = 1.0
+    session: requests.Session | None = field(default=None, repr=False)
     result: StationResult = field(init=False, default=None)
 
     def run(self) -> None:
@@ -114,10 +121,28 @@ class ClimateExtractor:
         """
         content = None
         formated_url = os.path.join(self.url, station_state, 'mes'+station_number+'.txt')
-        response = requests.get(formated_url)
-        if response.status_code == 200:
-            content = response.text
-        return content, response.status_code
+        retry_statuses = {429, 500, 502, 503, 504}
+        session = self.session or requests.Session()
+        last_status = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = session.get(formated_url, timeout=self.timeout_seconds)
+            except requests.RequestException:
+                response = None
+            if response is None:
+                last_status = None
+            else:
+                last_status = response.status_code
+                if response.status_code == 200:
+                    content = response.text
+                    break
+                if response.status_code not in retry_statuses:
+                    break
+            if attempt < self.max_retries:
+                delay = self.backoff_factor * (2 ** attempt)
+                delay += random.uniform(0, 0.5)
+                time.sleep(delay)
+        return content, last_status
 
     def _get_station_attributes(self) -> tuple[str | None, str | None, bool]:
         """
