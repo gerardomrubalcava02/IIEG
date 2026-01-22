@@ -34,7 +34,12 @@ class ClimateStats:
             self,
             stations: Stations,
             url: str,
-            output_path: os.PathLike
+            output_path: os.PathLike,
+            max_workers: int | None = None,
+            request_delay_seconds: float = 0.0,
+            timeout_seconds: float = 30.0,
+            max_retries: int = 3,
+            backoff_factor: float = 1.0
     ) -> None:
         """Extract climate station data and save it to the specified output path.
 
@@ -43,7 +48,16 @@ class ClimateStats:
             url (str): The URL to retrieve climate data.
             output_path (os.PathLike): The file path where the extracted data will be stored.
         """
-        extract_climate_station_data(stations=stations, url=url, output_path=output_path)
+        extract_climate_station_data(
+            stations=stations,
+            url=url,
+            output_path=output_path,
+            max_workers=max_workers,
+            request_delay_seconds=request_delay_seconds,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+            backoff_factor=backoff_factor
+        )
         generate_geopackage(output_path=output_path)
         remove_files_by_extension(directory=output_path)
 

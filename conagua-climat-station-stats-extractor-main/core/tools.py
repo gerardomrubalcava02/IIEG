@@ -10,11 +10,14 @@
 # License: MIT
 # ==============================================================================
 
-import os
 import glob
 import multiprocessing
-import pandas as pd
+import os
+import random
+import time
+
 import geopandas as gpd
+import pandas as pd
 
 from tqdm import tqdm
 from shapely.geometry import Point
@@ -26,17 +29,25 @@ type Stations = list[str]
 
 
 def process_station(
-        args: tuple[int, str, str]
+        args: tuple[int, str, str, float, float, int, float]
     ) -> None:
     """Process a single climate station to extract data.
 
     Args:
         args (tuple): A tuple containing a station, URL, and output path.
     """
-    station, url, output_path = args
+    station, url, output_path, request_delay_seconds, timeout_seconds, max_retries, backoff_factor = args
     Logger.debug('🚀 Running Data Extraction for Climate Station: {}'.format(station))
+    if request_delay_seconds > 0:
+        time.sleep(random.uniform(0, request_delay_seconds))
     try:
-        extractor = ClimateExtractor(station=station, url=url)
+        extractor = ClimateExtractor(
+            station=station,
+            url=url,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+            backoff_factor=backoff_factor
+        )
         extractor.run()
         result = extractor.get()
         if result is not None:
@@ -54,7 +65,12 @@ def process_station(
 def extract_climate_station_data(
         stations: list,
         url: str,
-        output_path: os.PathLike
+        output_path: os.PathLike,
+        max_workers: int | None = None,
+        request_delay_seconds: float = 0.0,
+        timeout_seconds: float = 30.0,
+        max_retries: int = 3,
+        backoff_factor: float = 1.0
     ) -> None:
     """Extract climate data for the specified stations and save it to the output path.
 
@@ -62,12 +78,29 @@ def extract_climate_station_data(
         stations (list): A list of climate station IDs.
         url (str): The URL to retrieve climate data.
         output_path (os.PathLike): The directory path where the extracted data will be stored.
+        max_workers (int | None): Max number of worker processes to use (defaults to CPU count).
+        request_delay_seconds (float): Max jittered delay before each request to reduce bursts.
+        timeout_seconds (float): Per-request timeout for the HTTP call.
+        max_retries (int): Number of retries for temporary HTTP failures.
+        backoff_factor (float): Base backoff factor for retry delays.
     """
     cpus = multiprocessing.cpu_count()
-    Logger.info(f'🚀 Running Data Extraction for Climate Stations using [{cpus}] CPUs ...')
-    args = [(station, url, output_path) for station in stations]
+    workers = min(cpus, max_workers) if max_workers else cpus
+    Logger.info(f'🚀 Running Data Extraction for Climate Stations using [{workers}] CPUs ...')
+    args = [
+        (
+            station,
+            url,
+            output_path,
+            request_delay_seconds,
+            timeout_seconds,
+            max_retries,
+            backoff_factor
+        )
+        for station in stations
+    ]
 
-    with multiprocessing.Pool(processes=cpus) as pool:
+    with multiprocessing.Pool(processes=workers) as pool:
         for _ in tqdm(pool.imap(process_station, args), total=len(stations), ascii=True, ncols=75, desc='📤 Extracting'):
             pass
     Logger.info('🟢 Extraction Done.')

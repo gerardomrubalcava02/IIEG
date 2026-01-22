@@ -1,5 +1,10 @@
 url: https://smn.conagua.gob.mx/tools/RESOURCES/Normales_Climatologicas/Mensuales/
 output_path: output
+max_workers: 4
+request_delay_seconds: 0.5
+timeout_seconds: 30
+max_retries: 3
+backoff_factor: 1.0
 
 stations:
   - jal14002

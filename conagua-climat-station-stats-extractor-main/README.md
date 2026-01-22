@@ -49,6 +49,20 @@ python climstats.py extract --config configs/jalisco_stations.yaml
 
 > 💡 The application generates a GPKG file, which is stored in the output directory specified in the configuration file.
 
+#### Tuning Request Concurrency
+
+If CONAGUA is rate-limiting your requests, lower the number of workers and add a delay between requests in your config file:
+
+```yaml
+max_workers: 2
+request_delay_seconds: 1.0
+timeout_seconds: 30
+max_retries: 5
+backoff_factor: 1.0
+```
+
+These settings reduce simultaneous requests and apply retries with exponential backoff to handle temporary blocks.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to open an issue for any suggestions or improvements.
