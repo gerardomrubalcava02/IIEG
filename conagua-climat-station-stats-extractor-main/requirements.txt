@@ -1,0 +1,4 @@
+requests
+unidecode
+jsonargparse[signatures,urls]
+geopandas
