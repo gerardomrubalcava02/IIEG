@@ -1,0 +1,39 @@
+paths:
+  stations_gpkg: "/home/serviciosocial/iieg_2026/02_clima/insumos/estaciones.gpkg"
+  stations_layer: "estaciones"
+  coast_gpkg: "/home/serviciosocial/iieg_2026/02_clima/insumos/costa.gpkg"
+  coast_layer: null
+  dem_raster: "/home/serviciosocial/iieg_2026/00_sig/CEM_mex/CEM_15m_UTM13N_clip_aoi.tif"
+  outdir: "/home/serviciosocial/iieg_2026/02_clima/resultados/interpolaciones_ked2"
+
+domain:
+  xmin: 294250.4020848634
+  xmax: 994250.4020848634
+  ymin: 1927486.9180106297
+  ymax: 2627486.9180106297
+  cellsize: 1000
+
+filters:
+  base_situation: "OPERANDO"
+  base_year: 2025
+  temp_index: "TEMPERATURA MEDIA MENSUAL"
+  rain_index: "LLUVIA TOTAL MENSUAL"
+  col_situation: "Situación"
+  col_year: "AÑO"
+  col_index: "Índice"
+
+coast:
+  class_column: "CLASE"
+  west_tags: ["OESTE", "PACIFICO", "PACÍFICO", "WEST"]
+  east_tags: ["ESTE", "GOLFO", "CARIBE", "EAST"]
+
+model:
+  min_points: 10
+  bin_no: 20
+  cv_splits: 5
+  cv_seed: 42
+  maxdist_frac: 0.5
+  temp_clip_buffer: 3.0
+  rain_max_factor: 1.5
+
+months: ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
